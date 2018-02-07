@@ -21,9 +21,93 @@ sudo apt-get autoremove -y
 sudo apt-get install ufw -y
 sudo ufw reset
 sudo ufw enable
+sudo ufw default allow outgoing 
+sudo ufw default deny incoming
 
 #This disables the root account login
 sudo passwd -l root
+
+#This does some simple service management
+#Installs/removes various software
+echo -n "Enable ssh? 1 for yes. "
+read answer1
+if [ $answer1 = 1 ]; then
+	sudo apt-get install openssh-server -y
+	sudo service ssh start
+	sudo ufw allow 22/tcp
+	sudo ufw allow 22
+else
+	sudo apt-get remove openssh-server -y
+	sudo ufw deny 22/tcp
+	sudo ufw deny 22
+fi
+echo -n "Enable vsftpd? 1 for yes. "
+read answer2
+if [ $answer2 = 1 ]; then
+	sudo apt-get install vsftpd -y
+	sudo service vsftpd start
+	sudo ufw allow 21/tcp
+	sudo ufw allow 21
+else
+	sudo apt-get remove vsftpd -y
+	sudo ufw deny 21/tcp
+	sudo ufw deny 21
+fi
+echo -n "Enable samba? 1 for yes. "
+read answer3
+if [ $answer3 = 1 ]; then
+	sudo apt-get install samba -y
+	sudo service smbd start
+	sudo service samba start
+	sudo ufw allow 445/tcp
+	sudo ufw allow 445
+else
+	sudo apt-get remove samba -y
+	sudo ufw deny 445/tcp
+	sudo ufw deny 445
+fi
+echo -n "LAMP server? 1 for yes. "
+read answer4
+if [ $answer4 = 1 ]; then
+	sudo apt-get install apache2 -y
+	sudo service apache2 start
+  sudo apt-get install php5 -y
+	sudo service php5 start
+  sudo apt-get install mysql-server -y
+	sudo service mysql start
+	sudo ufw allow 80/tcp
+	sudo ufw allow 80
+fi
+echo -n "Enable Apache2? 1 for yes. "
+read answer4
+if [ $answer4 = 1 ]; then
+	sudo apt-get install apache2 -y
+	sudo service apache2 start
+	sudo ufw allow 80/tcp
+	sudo ufw allow 80
+else
+	sudo apt-get remove apache2 -y
+	sudo ufw deny 80/tcp
+	sudo ufw deny 80
+fi
+echo -n "Enable PHP? 1 for yes. "
+read answer5
+if [ $answer5 = 1 ]; then
+	sudo apt-get install php5 -y
+	sudo service php5 start
+else
+	sudo apt-get purge php5 -y
+	sudo apt-get remove php5 -y
+fi
+echo -n "Enable mysql? 1 for yes. "
+read answer5
+if [ $answer5 = 1 ]; then
+	sudo apt-get install mysql-server -y
+	sudo service mysql start
+else
+	sudo apt-get purge mysql-server -y
+	sudo apt-get remove mysql-server -y
+fi
 
 #Enable secure shared memory
 sudo bash -c "echo 'none /run/shm tmpfs rw,noexec,nosuid,nodev 0 0' >> /etc/fstab"
@@ -64,6 +148,7 @@ sudo lynis audit system --quick
 
 #Gives a quick break before upgrade
 sleep 5
+sudo updatedb
 
 #Does an upgrade
 sudo apt-get upgrade -y
