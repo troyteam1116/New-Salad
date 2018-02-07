@@ -1,27 +1,33 @@
 #!/bin/bash
 #This script was made by Clemence Yi.
 #The purpose of this script is to greatly reduce the amount of time it takes to gain points in the Cyber Patriot competition.
-#This script manages users, deletes potentially dangerous software, enables a firewall, manages services, does config management, manages network, deletes non-work related media files, and performs system
-#updates.
+#This script does stuff
+
+#Removes aliases
+\unalias -a
+
 #Updates the software lists
-sudo cp sources.list /etc/apt
 sudo apt-get update
+
 #Lists all users
 cut -d : -f 1 /etc/passwd > userlist
+
 #Removes potentially harmful software
-bad=("john" "netcat*" "bind9" "telnet*" "iodine" "kismet" "medusa" "hydra" "fcraczip" "ayttm" "empathy" "nikto" "logkeys" "vino" "tightvncserver" "rdesktop" "remmina" "vinagre" "rsync" "ettercap" "knocker")
+bad=("john" "netcat*" "bind9" "telnet*" "iodine" "kismet" "medusa" "hydra" "fcraczip" "ayttm" "empathy" "nikto" "logkeys" "vino" "tightvncserver" "rdesktop" "remmina" "vinagre" "rsync" "ettercap" "knocker" "openarena-server" "wireshark")
 for i in ${bad[*]}; do sudo apt-get remove $i -y; sudo apt-get purge $i -y; done
 sudo apt-get autoremove -y
-#Gives a break before continuing
-sleep 10
+
 #Installs and enables ufw
-sudo apt-get install gufw -y
+sudo apt-get install ufw -y
 sudo ufw reset
 sudo ufw enable
+
 #This disables the root account login
 sudo passwd -l root
+
 #Enable secure shared memory
 sudo bash -c "echo 'none /run/shm tmpfs rw,noexec,nosuid,nodev 0 0' >> /etc/fstab"
+
 #These commands copy config files to the desired location
 sudo cp login.defs /etc
 sudo cp sshd_config /etc/ssh
@@ -29,47 +35,38 @@ sudo cp common-password /etc/pam.d
 sudo cp lightdm.conf /etc/lightdm
 sudo cp common-auth /etc/pam.d
 sudo cp sysctl.conf /etc
+sudo cp crontab /etc
+sudo cp hosts /etc
+sudo cp rc.local /etc
+
 #Reloads sysctl
 sudo sysctl -p
+
 #Finds and deletes non-work related media files
-sudo find /home . -name "*.mp3" -delete
-sudo find /home . -name "*.mp4" -delete
-sudo find /home . -name "*.wav" -delete
-sudo find /home . -name "*.jpg" -delete
-sudo find /home . -name "*.png" -delete
-sudo find /home . -name "*.m4a" -delete
-sudo find /home . -name "*.m4b" -delete
-sudo find /home . -name "*.aif" -delete
-sudo find /home . -name "*.iff" -delete
-sudo find /home . -name "*.m3u" -delete
-sudo find /home . -name "*.mid" -delete
-sudo find /home . -name "*.mpa" -delete
-sudo find /home . -name "*.wma" -delete
-sudo find /home . -name "*.3g2" -delete
-sudo find /home . -name "*.3gp" -delete
-sudo find /home . -name "*.asf" -delete
-sudo find /home . -name "*.avi" -delete
-sudo find /home . -name "*.flv" -delete
-sudo find /home . -name "*.m4v" -delete
-sudo find /home . -name "*.mov" -delete
-sudo find /home . -name "*.mpg" -delete
-sudo find /home . -name "*.rm" -delete
-sudo find /home . -name "*.srt" -delete
-sudo find /home . -name "*.swf" -delete
-sudo find /home . -name "*.vof" -delete
-sudo find /home . -name "*.wmv" -delete
-sudo find /home . -name "*.gif" -delete
+media=("*.mp3" "*.mp4" "*.m4a" "*.ogg" "*.png" "*.jpg" "*.wav" "*.m4b")
+for i in ${media[*]}; do sudo find / . -name $i >> mediafiles; done
+
 #Finds potentially hazardous files
 sudo find / . -name "*.html" > htmlfiles
 sudo find / . -name "*.php" > phpfiles
-#Lists the html file in /var/www/html
-cat /var/www/html/index.html > index.html.txt
+
 #Cats other files
 dpkg -l > dpkg
-cat /etc/crontab > cron
+
+#Finds files with certain permissions
+sudo bash -c "find / -user root -perm -4000 -print"
+sudo bash -c "find / -group kmem -perm -2000 -print"
+
+#Performs a system audit
+sudo apt-get install chkrootkit -y
+sudo apt-get install lynis -y
+sudo lynis audit system --quick
+
 #Gives a quick break before upgrade
 sleep 5
+
 #Does an upgrade
 sudo apt-get upgrade -y
+
 #Reboots
 sudo reboot
